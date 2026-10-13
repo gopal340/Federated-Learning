@@ -1,11 +1,7 @@
 import React from 'react';
-import { Plus, FileText, MessageSquare, Layers, GitFork, Cpu, Activity } from 'lucide-react';
-
-export type NavTab = 'chat' | 'architecture' | 'federated' | 'models';
+import { Plus, FileText, Activity } from 'lucide-react';
 
 interface NavbarProps {
-  currentTab: NavTab;
-  onSelectTab: (tab: NavTab) => void;
   onOpenReport: () => void;
   onNewChat: () => void;
   backendStatus: { status: string; models_loaded: boolean; device: string };
@@ -13,8 +9,6 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  currentTab,
-  onSelectTab,
   onOpenReport,
   onNewChat,
   backendStatus,
@@ -22,17 +16,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const isOnline = backendStatus.status === 'online' && backendStatus.models_loaded;
 
-  const navItems: { tab: NavTab; label: string; icon: React.ReactNode }[] = [
-    { tab: 'chat', label: 'Decision Console', icon: <MessageSquare size={15} /> },
-    { tab: 'architecture', label: 'Architecture', icon: <Layers size={15} /> },
-    { tab: 'federated', label: 'Federated Training', icon: <GitFork size={15} /> },
-    { tab: 'models', label: 'Model Specs', icon: <Cpu size={15} /> },
-  ];
-
   return (
     <header className="header-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.65rem 1.5rem', background: '#ffffff', borderBottom: '1px solid var(--border-subtle)', position: 'sticky', top: 0, zIndex: 50 }}>
       
-      {/* Left: Brand + New Chat */}
+      {/* Left: Brand + New Query */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <button 
           className="new-chat-btn" 
@@ -52,41 +39,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            Multi-Agent Decision Intelligence
+            Decision Intelligence Console
           </span>
         </div>
       </div>
-
-      {/* Center: Navigation Tabs */}
-      <nav style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-tertiary)', padding: '0.2rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
-        {navItems.map((item) => {
-          const isActive = currentTab === item.tab;
-          return (
-            <button
-              key={item.tab}
-              onClick={() => onSelectTab(item.tab)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.4rem 0.85rem',
-                borderRadius: '8px',
-                fontSize: '0.825rem',
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? 'var(--accent-indigo)' : 'var(--text-secondary)',
-                background: isActive ? '#ffffff' : 'transparent',
-                border: 'none',
-                boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
 
       {/* Right: Hardware Telemetry HUD & Report */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
