@@ -28,3 +28,10 @@ FINAL_FEDERATED_QWEN_JEV_V2/qwen/agent2/checkpoint-*/
 Thumbs.db
 .vscode/
 .idea/
+
+# Image assets and generated plot diagrams
+*.png
+*.jpg
+*.jpeg
+*.webp
+

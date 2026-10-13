@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowUp, Sparkles, AlertCircle, User, Bot, RefreshCw } from 'lucide-react';
+import { ArrowUp, Sparkles, AlertCircle, RefreshCw, Sliders, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { FederatedSharedCard } from '../components/FederatedSharedCard';
 import type { ChatResponse, AgentLiveState } from '../types';
 import { sendChatDecision } from '../api';
@@ -46,6 +46,14 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState<number>(0);
+
+  // Scenario Builder state
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [builderAmount, setBuilderAmount] = useState('9,950');
+  const [builderRail, setBuilderRail] = useState('SWIFT MT103 (Cross-Border Wire)');
+  const [builderVelocity, setBuilderVelocity] = useState('4 transactions within 12 hours');
+  const [builderJurisdiction, setBuilderJurisdiction] = useState('Offshore Jurisdiction (Cayman Islands)');
+  const [builderProfile, setBuilderProfile] = useState('Newly opened account with zero prior history');
 
   // Conversation history
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -141,32 +149,28 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         setAgent2Live((prev) => ({
           ...prev,
           stage: 'jev_deciding',
-          statusText: 'JEV Engine: Applying calibration temperature (T=1.0022)...',
+          statusText: 'JEV Engine: Applying System 1 calibration & slots...',
         }));
       }
     }, 1000);
 
     try {
-      // Execute robust HTTP POST to backend
       const res = await sendChatDecision(q);
 
       if (timerRef.current) clearInterval(timerRef.current);
 
       const finalA1State: AgentLiveState = {
         stage: 'complete',
-        statusText: 'Complete',
-        result: res.agent1,
+        statusText: `Verdict: ${res.agent1.decision ? 'True' : 'False'} (${(res.agent1.confidence * 100).toFixed(0)}%)`,
       };
       const finalA2State: AgentLiveState = {
         stage: 'complete',
-        statusText: 'Complete',
-        result: res.agent2,
+        statusText: `Verdict: ${res.agent2.decision ? 'True' : 'False'} (${(res.agent2.confidence * 100).toFixed(0)}%)`,
       };
 
       setAgent1Live(finalA1State);
       setAgent2Live(finalA2State);
 
-      // Update message with complete deliberation result
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMsgId
@@ -206,6 +210,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     }
   };
 
+  const handleBuildScenario = () => {
+    const text = `A customer initiated ${builderVelocity} totaling $${builderAmount} each via ${builderRail} directed to ${builderJurisdiction}. Customer profile: ${builderProfile}. Does this require immediate hard hold and FinCEN SAR filing under BSA anti-structuring regulations?`;
+    setShowBuilder(false);
+    handleSend(text);
+  };
+
   return (
     <div className="chat-container">
       {/* Messages Viewport */}
@@ -220,6 +230,115 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             <p>
               Dual-agent federated deliberation powered by trained Qwen LoRA adapters and verified JEV Decision Intelligence.
             </p>
+
+            {/* Scenario Builder Toggle */}
+            <div style={{ maxWidth: '640px', width: '100%', margin: '0 auto 1.5rem', textAlign: 'left' }}>
+              <div 
+                onClick={() => setShowBuilder(!showBuilder)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  background: 'var(--bg-card)',
+                  border: '1.5px solid var(--border-subtle)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--accent-indigo)' }}>
+                  <Sliders size={15} />
+                  <span>Interactive Scenario Builder (Custom Parameters)</span>
+                </div>
+                {showBuilder ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+              </div>
+
+              {showBuilder && (
+                <div style={{ marginTop: '0.5rem', padding: '1.25rem', background: '#f8fafc', border: '1px solid var(--border-subtle)', borderRadius: '12px' }} className="animate-fade-in">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Transaction Amount ($)</label>
+                      <input 
+                        type="text" 
+                        value={builderAmount} 
+                        onChange={(e) => setBuilderAmount(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Clearing Rail</label>
+                      <select 
+                        value={builderRail} 
+                        onChange={(e) => setBuilderRail(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
+                      >
+                        <option>SWIFT MT103 (Cross-Border Wire)</option>
+                        <option>Fedwire (High-Value Domestic)</option>
+                        <option>ACH Batch Payment</option>
+                        <option>ATM Multiple Cash Rail</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Velocity Pattern</label>
+                      <select 
+                        value={builderVelocity} 
+                        onChange={(e) => setBuilderVelocity(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
+                      >
+                        <option>4 transactions within 12 hours</option>
+                        <option>5 consecutive deposits within 48 hours</option>
+                        <option>Single rapid egress transfer</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Destination Territory</label>
+                      <select 
+                        value={builderJurisdiction} 
+                        onChange={(e) => setBuilderJurisdiction(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
+                      >
+                        <option>Offshore Jurisdiction (Cayman Islands)</option>
+                        <option>European Private Bank (Switzerland)</option>
+                        <option>Domestic Clearing Account (USA)</option>
+                      </select>
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Customer Profile / Risk Flag</label>
+                      <input 
+                        type="text" 
+                        value={builderProfile} 
+                        onChange={(e) => setBuilderProfile(e.target.value)}
+                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem' }} 
+                      />
+                    </div>
+                  </div>
+
+
+                  <button
+                    onClick={handleBuildScenario}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem',
+                      borderRadius: '8px',
+                      background: 'var(--accent-indigo)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <Send size={14} />
+                    <span>Generate Scenario & Run Dual-Agent Deliberation</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="welcome-prompts-grid">
               {DEMO_PROMPTS.map((p, idx) => (
@@ -241,61 +360,54 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             {messages.map((msg) => {
               if (msg.role === 'user') {
                 return (
-                  <div key={msg.id} className="message-row user-row animate-fade-in">
-                    <div className="message-content user-bubble">
-                      <p>{msg.query}</p>
-                    </div>
-                    <div className="avatar-icon user-avatar">
-                      <User size={16} />
+                  <div key={msg.id} className="chat-bubble-row user-row animate-fade-in">
+                    <div className="chat-bubble user-bubble">
+                      <div className="bubble-text">{msg.query}</div>
                     </div>
                   </div>
                 );
               }
 
               // Assistant message
-              const a1State = msg.isLoading ? agent1Live : (msg.agent1State || agent1Live);
-              const a2State = msg.isLoading ? agent2Live : (msg.agent2State || agent2Live);
-
               return (
-                <div key={msg.id} className="message-row assistant-row animate-fade-in">
-                  <div className="avatar-icon bot-avatar">
-                    <Bot size={18} />
-                  </div>
-                  <div className="message-content assistant-content">
-                    {/* Header badge */}
-                    <div className="assistant-header-meta">
-                      <span className="badge-tag">FEDERATED DELIBERATION</span>
-                      {msg.isLoading ? (
-                        <span className="badge-time" style={{ color: '#10a37f', fontWeight: 600 }}>
-                          Deliberating ({elapsedSec}s)...
-                        </span>
-                      ) : msg.response ? (
-                        <span className="badge-time">
-                          Latency: {msg.response.total_processing_time_ms.toFixed(0)}ms
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {/* Live Deliberation in progress */}
+                <div key={msg.id} className="chat-bubble-row assistant-row animate-fade-in">
+                  <div className="assistant-content-wrapper">
+                    {/* Live deliberation stages during execution */}
                     {msg.isLoading && (
-                      <div className="live-deliberating-box animate-fade-in">
-                        <div className="live-node-progress-row">
-                          <div className="live-node-pill">
-                            <span className="live-pulse-dot"></span>
-                            <span>Node 1 (Analytical): {a1State.statusText}</span>
+                      <div className="deliberation-banner animate-fade-in">
+                        <div className="deliberation-header">
+                          <div className="deliberation-pulse">
+                            <span className="pulse-dot" />
+                            <span className="pulse-text">Dual-Agent Deliberation in Progress...</span>
                           </div>
-                          <div className="live-node-pill">
-                            <span className="live-pulse-dot"></span>
-                            <span>Node 2 (Challenger): {a2State.statusText}</span>
-                          </div>
+                          <span className="deliberation-timer">{elapsedSec}s elapsed</span>
                         </div>
-                        <div className="live-progress-bar-container">
-                          <div className="live-progress-bar-fill"></div>
+
+                        <div className="deliberation-nodes-grid">
+                          <div className="deliberation-node-card">
+                            <div className="node-card-title">
+                              <span className="node-badge agent1-badge">Agent 1: Fraud Specialist</span>
+                            </div>
+                            <div className="node-card-status">
+                              <RefreshCw size={13} className="animate-spin-slow" />
+                              <span>{msg.agent1State?.statusText || agent1Live.statusText}</span>
+                            </div>
+                          </div>
+
+                          <div className="deliberation-node-card">
+                            <div className="node-card-title">
+                              <span className="node-badge agent2-badge">Agent 2: AML Challenger</span>
+                            </div>
+                            <div className="node-card-status">
+                              <RefreshCw size={13} className="animate-spin-slow" />
+                              <span>{msg.agent2State?.statusText || agent2Live.statusText}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Complete Federated Deliberation Topology & Shared Master Model */}
+                    {/* Final decision response card */}
                     {msg.response && (
                       <FederatedSharedCard
                         agent1={msg.response.agent1}
