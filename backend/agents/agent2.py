@@ -11,14 +11,9 @@ Focus:
 Uses the actual agent2 LoRA adapter from qwen/agent2/
 """
 
-AGENT2_SYSTEM_PROMPT = """You are Agent 2 (AML Compliance & Critical Risk Challenger) in a federated banking intelligence system.
-Critically evaluate the transaction scenario from an adversarial, regulatory (BSA/AML/FATF), and audit perspective.
-
-Structure your analysis concisely in bullet points:
-• REGULATORY & AUDIT EVALUATION: Scrutinize transaction velocity, KYC legitimacy, and AML structuring thresholds.
-• COUNTER-ARGUMENTS & UNCERTAINTY: Potential false positives, legitimate business explanations, and evidentiary gaps.
-• COMPLIANCE IMPLICATION: SAR (Suspicious Activity Report) necessity and immediate hold recommendations.
-• VERDICT: Conclude clearly with 'VERDICT: TRUE' (if suspicious, high-risk, or requiring investigation/freeze) or 'VERDICT: FALSE' (if benign/cleared)."""
+AGENT2_SYSTEM_PROMPT = """You are Agent 2 (AML Compliance & Policy Challenger).
+Analyze the query directly and concisely in 1 to 2 short sentences:
+State whether this transaction complies or is rejected/flagged and the direct regulatory or policy reason."""
 
 AGENT2_ADAPTER = "agent2"
 AGENT2_ID = "agent_2"

@@ -88,7 +88,7 @@ async def run_agent_pipeline(
     user_question: str,
     context: Optional[str],
     status_callback: Optional[Callable] = None,
-    max_new_tokens: int = 512,
+    max_new_tokens: int = 60,
 ) -> dict:
     """
     Run the full agent pipeline: Qwen reasoning → JEV decision.
@@ -195,21 +195,16 @@ async def run_shared_federated_pipeline(
     a2_factors_str = "; ".join(agent2_res.get("key_factors", [])[:3])
 
     system_prompt = (
-        "You are the Central Shared Federated Global Model (FedAvg Consensus Engine). "
-        "Synthesize the client stores into an authoritative, detailed financial fraud & AML risk assessment. "
-        "Explain clearly and thoroughly WHY this transaction is a severe financial and regulatory risk."
+        "You are the Central Shared Federated Global Model. "
+        "Provide a concise, direct, authoritative answer in exactly 1 to 2 sentences. "
+        "Do NOT write essays, bullet lists, or long headers. State the decision clearly and the exact reason."
     )
 
     user_message = (
-        f"TRANSACTION / DECISION QUERY: {user_question}\n\n"
-        f"CLIENT STORE 1 (Analytical Evidence): Stance={a1_stance} | Indicators={a1_factors_str}\n"
-        f"CLIENT STORE 2 (AML Regulatory): Stance={a2_stance} | Indicators={a2_factors_str}\n\n"
-        "Provide a comprehensive, authoritative risk analysis with these structured headings:\n"
-        "• WHY THIS PRESENTS CRITICAL RISK: Explain the high velocity, atypical fund dispersion, and fraud patterns.\n"
-        "• REGULATORY & COMPLIANCE BREACH: Detail the BSA/AML, FATF, and structuring violations requiring SAR filing.\n"
-        "• FINANCIAL EXPOSURE: Explain the risk of irrevocable cross-border losses and money-mule networks.\n"
-        "• MANDATORY ACTION DIRECTIVE: Prescribe exact containment actions (freeze account, recall wires, step-up KYC).\n"
-        "• MASTER VERDICT: Conclude with 'VERDICT: TRUE' (Risk Confirmed) or 'VERDICT: FALSE' (Cleared)."
+        f"DECISION QUERY: {user_question}\n"
+        f"Node 1 Finding: {a1_stance}\n"
+        f"Node 2 Finding: {a2_stance}\n\n"
+        "State the final decision and specific reason directly in 1 to 2 concise sentences."
     )
 
     qwen_result = await asyncio.to_thread(
@@ -218,13 +213,13 @@ async def run_shared_federated_pipeline(
         adapter_name="global_qwen",
         system_prompt=system_prompt,
         user_message=user_message,
-        max_new_tokens=400,
+        max_new_tokens=70,
         temperature=0.2,
         top_p=0.85,
         repetition_penalty=1.18,
     )
 
-    explanation = qwen_result["text"]
+    explanation = qwen_result["text"].strip()
 
     # Run JEV calibrated decision on the shared model
     jev_result = model_manager.jev_engine.run_agent_decision(

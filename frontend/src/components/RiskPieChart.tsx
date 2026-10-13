@@ -39,10 +39,10 @@ export const RiskPieChart: React.FC<RiskPieChartProps> = ({
     : ['#10b981', '#3b82f6', '#8b5cf6']; // Emerald, Blue, Purple
 
   // SVG parameters
-  const size = 180;
+  const size = 140;
   const center = size / 2;
-  const radius = 68;
-  const strokeWidth = 26;
+  const radius = 52;
+  const strokeWidth = 20;
   const circumference = 2 * Math.PI * radius;
 
   // Compute stroke offsets for factors
@@ -65,7 +65,7 @@ export const RiskPieChart: React.FC<RiskPieChartProps> = ({
     <div className="risk-pie-container animate-fade-in">
       <div className="pie-header-row">
         <div className="pie-title-block">
-          <PieIcon size={16} className="text-cyan-500" />
+          <PieIcon size={15} className="text-cyan-500" />
           <h4>Calibrated Decision Distribution</h4>
         </div>
 
@@ -75,13 +75,13 @@ export const RiskPieChart: React.FC<RiskPieChartProps> = ({
             className={`pie-tab-btn ${activeTab === 'verdict' ? 'active' : ''}`}
             onClick={() => setActiveTab('verdict')}
           >
-            Stance Probability
+            Probability
           </button>
           <button
             className={`pie-tab-btn ${activeTab === 'factors' ? 'active' : ''}`}
             onClick={() => setActiveTab('factors')}
           >
-            Risk Breakdown
+            Factors
           </button>
         </div>
       </div>
@@ -170,20 +170,20 @@ export const RiskPieChart: React.FC<RiskPieChartProps> = ({
               <div className="legend-item">
                 <span className="legend-bullet" style={{ backgroundColor: '#ef4444' }}></span>
                 <div className="legend-info">
-                  <span className="legend-label">Fraud & Anomaly Stance</span>
+                  <span className="legend-label">Fraud & Anomaly</span>
                   <span className="legend-percentage font-mono text-red-600 font-bold">{riskProb}%</span>
                 </div>
               </div>
               <div className="legend-item">
                 <span className="legend-bullet" style={{ backgroundColor: '#10b981' }}></span>
                 <div className="legend-info">
-                  <span className="legend-label">Benign / Cleared Baseline</span>
-                  <span className="legend-percentage font-mono text-emerald-600">{safeProb}%</span>
+                  <span className="legend-label">Benign / Cleared</span>
+                  <span className="legend-percentage font-mono text-emerald-600 font-bold">{safeProb}%</span>
                 </div>
               </div>
               <div className="legend-note">
                 <Info size={12} />
-                <span>Calibrated by JEV-9B Decision Head ($T=1.0022$)</span>
+                <span>Calibrated by JEV-9B ($T=1.002$)</span>
               </div>
             </div>
           ) : (
@@ -204,7 +204,7 @@ export const RiskPieChart: React.FC<RiskPieChartProps> = ({
               ))}
               <div className="legend-note">
                 <Info size={12} />
-                <span>Extracted from Federated LoRA Gradient Weights</span>
+                <span>LoRA Gradient Weights</span>
               </div>
             </div>
           )}

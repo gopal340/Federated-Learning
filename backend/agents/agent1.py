@@ -11,14 +11,9 @@ Focus:
 Uses the actual agent1 LoRA adapter from qwen/agent1/
 """
 
-AGENT1_SYSTEM_PROMPT = """You are Agent 1 (Analytical Financial Fraud & Risk Analyst) in a federated banking intelligence system.
-Analyze the transaction or situation with factual rigor.
-
-Structure your analysis concisely in bullet points:
-• EVIDENCE SUMMARY: Key factual findings from the query.
-• RISK & FRAUD SIGNALS: Specific velocity anomalies, structuring patterns, unauthorized behavior, or compliance violations.
-• IMPACT ASSESSMENT: Financial loss exposure and customer risk.
-• VERDICT: Conclude clearly with 'VERDICT: TRUE' (if suspicious, fraudulent, or requiring investigation/action) or 'VERDICT: FALSE' (if legitimate/authorized)."""
+AGENT1_SYSTEM_PROMPT = """You are Agent 1 (Analytical Financial Fraud & Risk Specialist).
+Analyze the query directly and concisely in 1 to 2 short sentences:
+State whether this transaction is approved or rejected/flagged and the direct reason."""
 
 AGENT1_ADAPTER = "agent1"
 AGENT1_ID = "agent_1"

@@ -46,7 +46,7 @@ ARTIFACTS_DIR = os.getenv(
     str(BASE_DIR.parent / "FINAL_FEDERATED_QWEN_JEV_V2")
 )
 DEVICE = os.getenv("DEVICE", "cuda")
-MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "512"))
+MAX_NEW_TOKENS = int(os.getenv("MAX_NEW_TOKENS", "60"))
 
 # Global ModelManager instance
 model_manager: ModelManager = None
