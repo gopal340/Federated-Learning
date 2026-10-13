@@ -20,6 +20,118 @@ from inference.qwen import generate_qwen_response
 
 logger = logging.getLogger(__name__)
 
+BANKING_KEYWORDS = {
+    "bank", "banking", "account", "accounts", "balance", "balances", "deposit", "deposits",
+    "depositing", "withdraw", "withdraws", "withdrawal", "withdrawals", "withdrawing",
+    "atm", "card", "cards", "debit", "credit", "transfer", "transfers", "transferring",
+    "wire", "wires", "money", "cash", "dollar", "dollars", "fund", "funds", "funding",
+    "overdraft", "loan", "loans", "interest", "cheque", "cheques", "check", "checks",
+    "payment", "payments", "pay", "paying", "transaction", "transactions", "swift",
+    "aml", "kyc", "fraud", "fraudulent", "mortgage", "mortgages", "finance", "financial",
+    "wallet", "wallets", "currency", "currencies", "usd", "inr", "eur", "gbp", "bill",
+    "bills", "billing", "invoice", "invoices", "remittance", "remittances", "pos",
+    "spend", "spending", "limit", "limits", "purchase", "purchases", "borrow", "borrowing",
+    "lender", "lending", "creditcard", "charge", "charges", "charging", "routing",
+    "statement", "statements", "ledger", "clearing", "settlement", "crypto", "bitcoin",
+    "asset", "assets", "fincen", "fatf", "structuring", "sar"
+}
+
+CURRENCY_SYMBOLS = {"$", "€", "£", "₹", "¥"}
+
+
+def is_banking_scenario(text: str) -> bool:
+    """Checks whether the user query is within the banking and financial transaction domain."""
+    if not text:
+        return False
+    if any(sym in text for sym in CURRENCY_SYMBOLS):
+        return True
+    words = set(re.findall(r'[a-zA-Z]+', text.lower()))
+    return bool(words & BANKING_KEYWORDS)
+
+
+def build_out_of_scope_response(question: str) -> dict:
+    """Constructs a deterministic rejection response for queries outside the banking domain."""
+    reasoning = (
+        "Request Rejected: This deliberation system strictly evaluates banking and financial transactions. "
+        "Non-banking scenarios are out of scope and cannot be processed."
+    )
+    factors = [
+        "Non-financial scenario outside institutional banking scope",
+        "Query lacks authorized banking, account, or transactional parameters"
+    ]
+    return {
+        "agent1": {
+            "agent": "agent_1",
+            "role": "analytical",
+            "explanation": "Rejected: This system strictly evaluates banking and financial compliance scenarios.",
+            "decision": True,
+            "confidence": 0.99,
+            "probabilities": {"true": 0.99, "false": 0.01},
+            "key_factors": ["Non-banking domain detected", "Request rejected by institutional policy"],
+            "uncertainty": "Low",
+            "processing_time_ms": 1.0,
+            "qwen_generation_time_ms": 1.0,
+            "jev_decision_time_ms": 0.1,
+        },
+        "agent2": {
+            "agent": "agent_2",
+            "role": "critical",
+            "explanation": "Rejected: Non-financial inquiries are outside compliance and regulatory rails.",
+            "decision": True,
+            "confidence": 0.99,
+            "probabilities": {"true": 0.99, "false": 0.01},
+            "key_factors": ["Out-of-scope non-financial domain", "Policy rejection"],
+            "uncertainty": "Low",
+            "processing_time_ms": 1.0,
+            "qwen_generation_time_ms": 1.0,
+            "jev_decision_time_ms": 0.1,
+        },
+        "shared_model": {
+            "name": "Central Shared Federated Global Model",
+            "adapter": "qwen/global_qwen",
+            "decision": True,
+            "confidence": 0.99,
+            "probabilities": {"true": 0.99, "false": 0.01},
+            "reasoning": reasoning,
+            "key_factors": factors,
+            "risk_breakdown": {
+                "Out-of-Scope Domain": 70.0,
+                "Policy Non-Compliance": 30.0,
+            },
+            "risk_explanation": {
+                "Out-of-Scope Domain": "Inquiry does not involve financial, account, or payment operations.",
+                "Policy Non-Compliance": "Automated domain protection filter active.",
+            },
+            "convergence_score": 1.0,
+            "agent1_weight": 0.5,
+            "agent2_weight": 0.5,
+            "processing_time_ms": 2.0,
+        },
+        "comparison": {
+            "status": "CONSENSUS",
+            "agreement": True,
+            "agent1_decision": True,
+            "agent2_decision": True,
+            "agent1_confidence": 0.99,
+            "agent2_confidence": 0.99,
+            "confidence_delta": 0.0,
+            "probability_comparison": {
+                "agent1": {"true": 0.99, "false": 0.01},
+                "agent2": {"true": 0.99, "false": 0.01},
+            },
+            "supporting_factors": factors,
+            "contradictory_factors": [],
+            "missing_information": [],
+        },
+        "final": {
+            "decision": True,
+            "confidence": 0.99,
+            "status": "CONSENSUS",
+            "reason": reasoning,
+        },
+        "total_processing_time_ms": 2.0,
+    }
+
 
 def extract_key_factors(explanation: str) -> list:
     """Extract key factors from the explanation text, cleanly stripping markdown artifacts."""

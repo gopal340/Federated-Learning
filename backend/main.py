@@ -29,7 +29,10 @@ from schemas.responses import (
 from model_manager import ModelManager
 from agents.agent1 import AGENT1_SYSTEM_PROMPT, AGENT1_ADAPTER, AGENT1_ID, AGENT1_ROLE
 from agents.agent2 import AGENT2_SYSTEM_PROMPT, AGENT2_ADAPTER, AGENT2_ID, AGENT2_ROLE
-from inference.pipeline import run_agent_pipeline, run_shared_federated_pipeline
+from inference.pipeline import (
+    run_agent_pipeline, run_shared_federated_pipeline,
+    is_banking_scenario, build_out_of_scope_response
+)
 from services.comparison import compare_agents, synthesize_final_decision
 
 # Logging setup
@@ -126,6 +129,19 @@ async def chat_decision(req: ChatRequest):
     start_time = time.time()
     logger.info(f"Incoming decision request: '{req.question[:60]}...'")
 
+    # Domain Guardrail: Reject non-banking queries immediately with clear reasoning
+    if not is_banking_scenario(req.question):
+        logger.info("Non-banking domain detected. Returning out-of-scope rejection response.")
+        raw_out = build_out_of_scope_response(req.question)
+        return ChatResponse(
+            agent1=AgentResult(**raw_out["agent1"]),
+            agent2=AgentResult(**raw_out["agent2"]),
+            shared_model=SharedModelResult(**raw_out["shared_model"]),
+            comparison=ComparisonResult(**raw_out["comparison"]),
+            final=FinalResult(**raw_out["final"]),
+            total_processing_time_ms=(time.time() - start_time) * 1000.0,
+        )
+
     # Run Agent 1 and Agent 2 concurrently
     agent1_task = run_agent_pipeline(
         model_manager=model_manager,
@@ -218,6 +234,22 @@ async def websocket_inference(websocket: WebSocket):
                 continue
 
             await websocket.send_json({"stage": "started", "message": "Inference initialized"})
+
+            if not is_banking_scenario(question):
+                raw_out = build_out_of_scope_response(question)
+                response = ChatResponse(
+                    agent1=AgentResult(**raw_out["agent1"]),
+                    agent2=AgentResult(**raw_out["agent2"]),
+                    shared_model=SharedModelResult(**raw_out["shared_model"]),
+                    comparison=ComparisonResult(**raw_out["comparison"]),
+                    final=FinalResult(**raw_out["final"]),
+                    total_processing_time_ms=5.0,
+                )
+                await websocket.send_json({
+                    "stage": "complete",
+                    "result": response.dict(),
+                })
+                continue
 
             # Define callbacks for both agents
             async def a1_cb(agent_id, stage, msg, payload=None):
