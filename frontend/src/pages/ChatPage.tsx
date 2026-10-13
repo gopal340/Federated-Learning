@@ -1,26 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowUp, Sparkles, AlertCircle, RefreshCw, Sliders, ChevronDown, ChevronUp, Send } from 'lucide-react';
+import { ArrowUp, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import { FederatedSharedCard } from '../components/FederatedSharedCard';
 import type { ChatResponse, AgentLiveState } from '../types';
 import { sendChatDecision } from '../api';
-
-const DEMO_PROMPTS = [
-  {
-    title: 'Wire Velocity Fraud',
-    desc: 'Rapid international transfer check',
-    text: 'Does this series of multiple international wire transfers with rapid velocity require fraud investigation?',
-  },
-  {
-    title: 'AML Structuring',
-    desc: 'Sub-threshold cash deposits',
-    text: 'An account received five $9,950 cash deposits across different ATM branches within 48 hours. Does this indicate structuring under BSA/AML regulations?',
-  },
-  {
-    title: 'Card & Identity Theft',
-    desc: 'Impossible travel card activity',
-    text: 'A debit transaction of $3,500 was initiated in Tokyo 20 minutes after an in-person chip transaction in Chicago. Should this transaction be blocked?',
-  },
-];
 
 interface ChatMessage {
   id: string;
@@ -46,14 +28,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState<number>(0);
-
-  // Scenario Builder state
-  const [showBuilder, setShowBuilder] = useState(false);
-  const [builderAmount, setBuilderAmount] = useState('9,950');
-  const [builderRail, setBuilderRail] = useState('SWIFT MT103 (Cross-Border Wire)');
-  const [builderVelocity, setBuilderVelocity] = useState('4 transactions within 12 hours');
-  const [builderJurisdiction, setBuilderJurisdiction] = useState('Offshore Jurisdiction (Cayman Islands)');
-  const [builderProfile, setBuilderProfile] = useState('Newly opened account with zero prior history');
 
   // Conversation history
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -210,149 +184,22 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     }
   };
 
-  const handleBuildScenario = () => {
-    const text = `A customer initiated ${builderVelocity} totaling $${builderAmount} each via ${builderRail} directed to ${builderJurisdiction}. Customer profile: ${builderProfile}. Does this require immediate hard hold and FinCEN SAR filing under BSA anti-structuring regulations?`;
-    setShowBuilder(false);
-    handleSend(text);
-  };
-
   return (
     <div className="chat-container">
       {/* Messages Viewport */}
       <div className="chat-messages-area">
         {messages.length === 0 ? (
-          /* Empty state: ChatGPT style */
-          <div className="chat-welcome-state animate-fade-in">
-            <div className="welcome-avatar">
+          /* Clean Minimalist Welcome State without hardcoded prompt buttons */
+          <div className="chat-welcome-state animate-fade-in" style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <div className="welcome-avatar" style={{ margin: '0 auto 1.25rem', width: '56px', height: '56px', borderRadius: '16px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={28} color="#10a37f" />
             </div>
-            <h2>What decision would you like to evaluate?</h2>
-            <p>
-              Dual-agent federated deliberation powered by trained Qwen LoRA adapters and verified JEV Decision Intelligence.
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem', letterSpacing: '-0.02em' }}>
+              Federated Multi-Agent Decision Console
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '560px', margin: '0 auto', lineHeight: 1.6 }}>
+              Type any financial transaction scenario, account query, or risk investigation into the input bar below to initiate real-time dual-agent deliberation.
             </p>
-
-            {/* Scenario Builder Toggle */}
-            <div style={{ maxWidth: '640px', width: '100%', margin: '0 auto 1.5rem', textAlign: 'left' }}>
-              <div 
-                onClick={() => setShowBuilder(!showBuilder)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  background: 'var(--bg-card)',
-                  border: '1.5px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.85rem', color: 'var(--accent-indigo)' }}>
-                  <Sliders size={15} />
-                  <span>Interactive Scenario Builder (Custom Parameters)</span>
-                </div>
-                {showBuilder ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
-              </div>
-
-              {showBuilder && (
-                <div style={{ marginTop: '0.5rem', padding: '1.25rem', background: '#f8fafc', border: '1px solid var(--border-subtle)', borderRadius: '12px' }} className="animate-fade-in">
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem', fontSize: '0.8rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Transaction Amount ($)</label>
-                      <input 
-                        type="text" 
-                        value={builderAmount} 
-                        onChange={(e) => setBuilderAmount(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem' }} 
-                      />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Clearing Rail</label>
-                      <select 
-                        value={builderRail} 
-                        onChange={(e) => setBuilderRail(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
-                      >
-                        <option>SWIFT MT103 (Cross-Border Wire)</option>
-                        <option>Fedwire (High-Value Domestic)</option>
-                        <option>ACH Batch Payment</option>
-                        <option>ATM Multiple Cash Rail</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Velocity Pattern</label>
-                      <select 
-                        value={builderVelocity} 
-                        onChange={(e) => setBuilderVelocity(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
-                      >
-                        <option>4 transactions within 12 hours</option>
-                        <option>5 consecutive deposits within 48 hours</option>
-                        <option>Single rapid egress transfer</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Destination Territory</label>
-                      <select 
-                        value={builderJurisdiction} 
-                        onChange={(e) => setBuilderJurisdiction(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem', background: '#fff' }}
-                      >
-                        <option>Offshore Jurisdiction (Cayman Islands)</option>
-                        <option>European Private Bank (Switzerland)</option>
-                        <option>Domestic Clearing Account (USA)</option>
-                      </select>
-                    </div>
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Customer Profile / Risk Flag</label>
-                      <input 
-                        type="text" 
-                        value={builderProfile} 
-                        onChange={(e) => setBuilderProfile(e.target.value)}
-                        style={{ width: '100%', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.825rem' }} 
-                      />
-                    </div>
-                  </div>
-
-
-                  <button
-                    onClick={handleBuildScenario}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem',
-                      borderRadius: '8px',
-                      background: 'var(--accent-indigo)',
-                      color: '#ffffff',
-                      border: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                    }}
-                  >
-                    <Send size={14} />
-                    <span>Generate Scenario & Run Dual-Agent Deliberation</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="welcome-prompts-grid">
-              {DEMO_PROMPTS.map((p, idx) => (
-                <button
-                  key={idx}
-                  className="welcome-prompt-card"
-                  onClick={() => handleSend(p.text)}
-                  disabled={isLoading}
-                >
-                  <div className="prompt-title">{p.title}</div>
-                  <div className="prompt-desc">{p.desc}</div>
-                </button>
-              ))}
-            </div>
           </div>
         ) : (
           /* Conversation message stream */
@@ -444,31 +291,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         )}
       </div>
 
-      {/* Fixed Bottom Input Area like ChatGPT */}
+      {/* Clean Bottom Input Area */}
       <div className="chat-bottom-dock">
-        {/* Quick prompt suggestions when not empty */}
-        {messages.length > 0 && (
-          <div className="dock-suggestions-row">
-            {DEMO_PROMPTS.map((p, idx) => (
-              <button
-                key={idx}
-                className="dock-suggestion-chip"
-                onClick={() => handleSend(p.text)}
-                disabled={isLoading}
-              >
-                <span>{p.title}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Input capsule */}
         <div className="dock-input-capsule">
           <input
             id="chat-question-input"
             type="text"
             className="dock-text-input"
-            placeholder="Ask a decision query (e.g. 'Should this transaction be flagged for fraud?')..."
+            placeholder="Type your scenario or decision query here (e.g. 'Account balance drained after sudden international wire...')..."
             value={inputQuestion}
             onChange={(e) => setInputQuestion(e.target.value)}
             onKeyDown={(e) => {
