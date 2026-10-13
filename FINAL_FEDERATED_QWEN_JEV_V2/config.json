@@ -1,0 +1,32 @@
+{
+    "project": "Federated Qwen + JEV Decision Intelligence",
+    "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dataset": {
+        "name": "FinGPT/fingpt-fiqa_qa",
+        "domain": "Financial Fraud Detection & Banking Risk Intelligence",
+        "total_local_examples": 17110,
+        "agent1_examples": 8555,
+        "agent2_examples": 8555,
+        "format": "Instruction / QA pairs (FinGPT)"
+    },
+    "federated_learning": {
+        "algorithm": "FedAvg",
+        "agents": 2,
+        "local_epochs": 3,
+        "synchronized_initialization": true
+    },
+    "pipeline": [
+        "Dataset download from HuggingFace",
+        "Federated data partitioning (50/50)",
+        "Agent 1 local Qwen LoRA training (Analytical role)",
+        "Agent 2 local Qwen LoRA training (Critical role)",
+        "FedAvg aggregation → global_qwen adapter",
+        "Global Qwen explanation generation",
+        "JEV-9B System-1 decision",
+        "Decision probability output"
+    ],
+    "decision_model": "autotrust/JEV-9B",
+    "training_pipeline_included": true,
+    "raw_training_data_included": false,
+    "base_model_weights_included": false
+}

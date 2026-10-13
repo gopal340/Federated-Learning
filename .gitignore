@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+
+# Python & Environment
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.egg-info/
+.env
+backend/.env
+!.env.example
+!backend/.env.example
+
+# Intermediate training checkpoints (keep final adapters: agent1, agent2, global_qwen)
+FINAL_FEDERATED_QWEN_JEV_V2/qwen/agent1/checkpoint-*/
+FINAL_FEDERATED_QWEN_JEV_V2/qwen/agent2/checkpoint-*/
+
+# Logs and OS
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
