@@ -48,12 +48,18 @@ def extract_key_factors(explanation: str) -> list:
             if len(factors) >= 4:
                 break
 
-    return factors[:4] if factors else [
-        "Rapid cross-border velocity anomaly detected across foreign clearing rails",
-        "Structuring patterns circumvent standard $10,000 CTR reporting thresholds",
-        "Zero recall window creates immediate 100% loss exposure upon foreign settlement",
-        "Mandatory FinCEN Suspicious Activity Report (SAR) filing required under BSA"
-    ]
+    if not factors:
+        # Fall back to meaningful lines from the actual explanation
+        clean_lines = [re.sub(r'[*_`#]', '', l).strip() for l in explanation.split("\n") if len(l.strip()) > 20]
+        if clean_lines:
+            factors = clean_lines[:4]
+        else:
+            factors = [
+                "Transaction evaluated against institutional policy and account constraints",
+                "Deliberated across multi-agent risk assessment guidelines"
+            ]
+
+    return factors[:4]
 
 
 def extract_uncertainty(explanation: str) -> str:
