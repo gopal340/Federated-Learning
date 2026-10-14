@@ -1,11 +1,8 @@
 """
 Comparison service — synthesizes outputs from Agent 1 (Analytical) and Agent 2 (Critical).
 
-Implements Section 9 & 10 of the specification:
-- Compares decisions, confidence, supporting and contradictory factors
-- Identifies CONSENSUS, DISAGREEMENT, or UNCERTAIN
-- Does NOT blindly pick "highest confidence = best answer"
-- Synthesizes findings into a final recommendation
+UPGRADE: Transitioned from heuristic confidence penalties to mathematically sound 
+Bayesian Updating (Independent Opinion Pooling) to calculate genuine statistical consensus.
 """
 import logging
 from typing import Dict, List, Optional
@@ -13,6 +10,24 @@ from schemas.responses import AgentResult, ComparisonResult, FinalResult
 
 logger = logging.getLogger(__name__)
 
+def calculate_bayesian_consensus(p1: float, p2: float) -> float:
+    """
+    Applies Bayesian Updating to combine two independent probability estimates.
+    Converts probabilities to odds, combines evidence, and returns the joint probability.
+    """
+    # Clamp to prevent division by zero or absolute certainty (infinity)
+    p1 = max(0.001, min(0.999, p1))
+    p2 = max(0.001, min(0.999, p2))
+    
+    # Convert probabilities to Odds (P / 1-P)
+    odds1 = p1 / (1.0 - p1)
+    odds2 = p2 / (1.0 - p2)
+    
+    # Combine evidence assuming conditional independence (uninformative prior of 0.5)
+    combined_odds = odds1 * odds2
+    
+    # Convert back to probability
+    return combined_odds / (1.0 + combined_odds)
 
 def compare_agents(agent1: AgentResult, agent2: AgentResult) -> ComparisonResult:
     """
@@ -88,45 +103,55 @@ def compare_agents(agent1: AgentResult, agent2: AgentResult) -> ComparisonResult
         missing_information=missing_info if missing_info else ["No major information gaps flagged"],
     )
 
-
 def synthesize_final_decision(
     agent1: AgentResult,
     agent2: AgentResult,
     comparison: ComparisonResult,
 ) -> FinalResult:
     """
-    Produce the final synthesized decision and human-readable explanation.
+    Produce the final synthesized decision using Bayesian probability pooling.
     """
     status = comparison.status
 
+    # Extract the true (fraud) probability from both agents
+    p1_true = agent1.probabilities.get("true", agent1.confidence if agent1.decision else 1.0 - agent1.confidence)
+    p2_true = agent2.probabilities.get("true", agent2.confidence if agent2.decision else 1.0 - agent2.confidence)
+    
+    # Calculate mathematically sound joint probability of 'TRUE'
+    joint_p_true = calculate_bayesian_consensus(p1_true, p2_true)
+
     if status == "CONSENSUS":
-        # Both agents agree
         decision = agent1.decision
-        final_conf = max(agent1.confidence, agent2.confidence, 0.965)
+        # Final confidence is the Bayesian probability of the chosen decision
+        final_conf = joint_p_true if decision else (1.0 - joint_p_true)
+        final_conf = round(final_conf, 4)
+        
         stance_str = "AFFIRMATIVE (TRUE — CONFIRMED FRAUD RISK)" if decision else "NEGATIVE (FALSE — BENIGN / AUTHORIZED)"
         reason = (
             f"Consensus reached: Analytical Agent 1 ({agent1.confidence * 100:.1f}%) "
             f"and Critical Agent 2 ({agent2.confidence * 100:.1f}%) converged on {stance_str}. "
-            f"Local client stores validate transaction indicators with high calibrated statistical confidence."
+            f"Bayesian evidence pooling validates this transaction with a joint statistical consensus of {final_conf * 100:.1f}%."
         )
 
     elif status == "DISAGREEMENT":
         decision = None
-        final_conf = max(agent1.confidence, agent2.confidence)
+        # In disagreement, Bayesian confidence naturally collapses toward 0.5 (uncertainty)
+        final_conf = max(joint_p_true, 1.0 - joint_p_true)
         a1_stance = "TRUE" if agent1.decision else "FALSE"
         a2_stance = "TRUE" if agent2.decision else "FALSE"
         reason = (
-            f"Divergence detected: Agent 1 (Analytical) concluded {a1_stance} with {agent1.confidence * 100:.1f}% confidence, "
-            f"while Agent 2 (Critical Challenger) concluded {a2_stance} with {agent2.confidence * 100:.1f}% confidence. "
-            f"Because fundamental risk assumptions are disputed, human review or additional evidence is required."
+            f"Divergence detected: Agent 1 concluded {a1_stance} ({agent1.confidence * 100:.1f}%), "
+            f"while Agent 2 concluded {a2_stance} ({agent2.confidence * 100:.1f}%). "
+            f"Because fundamental risk assumptions cancel each other out (Joint Probability: {final_conf * 100:.1f}%), "
+            f"human review or additional evidence is mathematically required."
         )
 
     else:  # UNCERTAIN
         decision = None
-        final_conf = min(agent1.confidence, agent2.confidence)
+        final_conf = max(joint_p_true, 1.0 - joint_p_true)
         reason = (
             f"Decision uncertain: Although both agents trended toward the same stance, "
-            f"confidence levels remain marginal (Agent 1: {agent1.confidence * 100:.1f}%, Agent 2: {agent2.confidence * 100:.1f}%). "
+            f"confidence levels remain mathematically marginal (Joint Confidence: {final_conf * 100:.1f}%). "
             f"Human verification recommended."
         )
 

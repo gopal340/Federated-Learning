@@ -10,3 +10,5 @@ accelerate>=0.33.0
 python-dotenv==1.0.1
 datasets>=2.18.0
 trl>=0.8.0
+flwr>=1.8.0
+scipy>=1.11.0
